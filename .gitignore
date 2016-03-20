@@ -21,6 +21,9 @@ $RECYCLE.BIN/
 # Ensime
 .ensime*
 
+Data/*.csv
+*.csv
+
 # =========================
 # Operating System Files
 # =========================
