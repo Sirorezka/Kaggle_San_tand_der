@@ -6,6 +6,8 @@
 library(readr) # CSV file I/O, e.g. the read_csv function
 library(xgboost)
 
+mywd <- "/home/sirorezka/python_proj/Santander Customer Satisfaction"
+setwd (mywd)
 
 # Reading the data
 dat_train <- read.csv("Data/train.csv", stringsAsFactors = F)
