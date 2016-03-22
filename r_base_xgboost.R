@@ -2,16 +2,20 @@
 # The environment is defined by the kaggle/rstats docker image: https://github.com/kaggle/docker-rstats
 # For example, here's several helpful packages to load in 
 
-
+require(bit64) 
 library(readr) # CSV file I/O, e.g. the read_csv function
 library(xgboost)
+library(data.table)
 
 mywd <- "/home/sirorezka/python_proj/Santander Customer Satisfaction"
 setwd (mywd)
 
 # Reading the data
-dat_train <- read.csv("Data/train.csv", stringsAsFactors = F)
-dat_test <- read.csv("Data/test.csv", stringsAsFactors = F)
+dat_train <- fread("Data/train.csv", stringsAsFactors = F)
+dat_test <- fread("Data/test.csv", stringsAsFactors = F)
+y <- as.numeric(dat_train$TARGET)
+ID_var <- dat_test$ID
+
 
 # Mergin the test and train data
 dat_test$TARGET <- NA
@@ -58,25 +62,29 @@ cor_v[upper.tri(cor_v)] <- 0
 cor_f <- as.data.frame(which(cor_v > 0.85, arr.ind = T))
 all_dat <- all_dat[,-unique(cor_f$row)]
 
+
 # Splitting the data for model
 train <- all_dat[1:nrow(dat_train), ]
 test <- all_dat[-(1:nrow(dat_train)), ]
 
+
+y <- as.numeric(train$TARGET)
+
+dat_train <- read.csv("Data/proc_train.csv", stringsAsFactors = F)
+dat_test <- read.csv("Data/proc_test.csv", stringsAsFactors = F)
 
 #Building the model
 set.seed(88)
 param <- list("objective" = "binary:logistic",booster = "gbtree",
               "eval_metric" = "auc",colsample_bytree = 0.85, subsample = 0.95)
 
-y <- as.numeric(train$TARGET)
-
 #AUC was highest in 310th round during cross validation
-xgbmodel <- xgboost(data = as.matrix(train[,-c(1,151)]), params = param,
+xgbmodel <- xgboost(data = as.matrix(dat_train), params = param,
                     nrounds = 310, max.depth = 5, eta = 0.03,
                     label = y, maximize = T)
 
 #Prediction
-res <- predict(xgbmodel, newdata = data.matrix(test[,-c(1,151)]))
-res <- data.frame(ID = test$ID, TARGET = res)
+res <- predict(xgbmodel, newdata = data.matrix(dat_test))
+res <- data.frame(ID = ID_var, TARGET = res)
 
 write.csv(res, "predictions/submission_R_xgboost.csv", row.names = FALSE)
